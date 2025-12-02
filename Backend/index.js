@@ -33,7 +33,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ====== MongoDB (Mongoose) Connection & Schemas ======
-const mongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/sia";
+// FIX #1: Changed MONGODB_URI to MONGO_URL (matches Railway env var)
+const mongoUri = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/sia";
 
 mongoose
   .connect(mongoUri)
@@ -185,7 +186,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-
 // =======================================================
 // =================== STUDENT SECTION ===================
 // =======================================================
@@ -293,6 +293,7 @@ app.post(
     }
   }
 );
+
 /* ======================================================
    SERVE FILES FROM DISK (Mongo stores file paths)
    ====================================================== */
@@ -333,7 +334,6 @@ app.get("/api/student/file/:type/:studentId", async (req, res) => {
     res.status(500).json({ error: "Unable to serve file." });
   }
 });
-
 
 // === UNIVERSAL FORGOT PASSWORD (MongoDB) ===
 app.post("/api/auth/forgot-password", async (req, res) => {
@@ -540,7 +540,6 @@ app.post("/api/auth/reset-password", resetPasswordHandler);
 
 // ====== File Upload (Multer) ======
 
-
 // ===== Utilities =====
 const formatPhone = (phone) => (!phone.startsWith("+") ? `+91${phone}` : phone);
 
@@ -657,8 +656,8 @@ app.post("/api/admin/verify-otp", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-//Student OTP
 
+// Student OTP
 
 // ---- Student OTP Route (MongoDB) ----
 app.post("/api/student/send-otp", async (req, res) => {
@@ -822,8 +821,6 @@ app.post("/api/student/login", async (req, res) => {
     res.status(500).json({ error: "Server error", details: err.message });
   }
 });
-
-
 
 // =======================================================
 // ================= ORGANIZATION SECTION ================
@@ -1039,9 +1036,9 @@ app.get("/", (req, res) =>
 app.use((req, res) => res.status(404).json({ error: "Route not found" }));
 
 // =======================================================
+// FIX #2: Removed hardcoded IP, just use PORT
 const PORT = process.env.PORT || 5050;
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running at http://10.240.162.152:${PORT}`);
-  console.log(`⚙️  Accessible locally via: http://localhost:${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
 });
