@@ -1,0 +1,44 @@
+.logo-carousel {
+  display: flex;
+  gap: 2rem;
+  animation: scroll 10s linear infinite;
+  will-change: transform;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Pause on hover */
+.logo-carousel:hover {
+  animation-play-state: paused;
+}
+
+/* Logo item styling */
+.logo-item {
+  min-width: 200px;
+  flex-shrink: 0;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.logo-item:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .logo-carousel {
+    gap: 1rem;
+    animation: scroll 60s linear infinite;
+  }
+
+  .logo-item {
+    min-width: 150px;
+  }
+}
