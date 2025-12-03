@@ -1,52 +1,35 @@
-// "use client";
+"use client";
 
 import { useState } from "react";
 import { Eye, EyeOff, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../../../config/apiEndpoints";
 
-export default function StudentRegistration() {
+export default function AdminRegistration() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
-    // Step 1: Personal Info
-    firstName: "",
-    lastName: "",
+    adminId: "",
+    fullName: "",
     email: "",
     phone: "",
-    dateOfBirth: "",
-    gender: "",
+    designation: "",
     profilePhoto: null,
-
-    // Step 2: Family Info
-    guardianName: "",
-    relation: "",
-    guardianEmail: "",
-    guardianPhone: "",
-    guardianAddress: "",
-    guardianIdProof: null,
-
-    // Step 3: Academic Info
-    enrollmentNumber: "",
-    branch: "",
-    semester: "",
-    cgpa: "",
-
-    // Step 4: Password
+    govtId: null,
+    collegeId: null,
     password: "",
     confirmPassword: "",
   });
 
   const [errors, setErrors] = useState({});
 
-  // ===== Reusable File Upload Component =====
   const FileUploadField = ({ label, name, fileName, handleFileChange }) => (
     <div>
       <label className="block text-sm font-semibold text-gray-700 mb-3">
-        {label} <span className="text-red-500">*</span>
+        {label}
       </label>
       <div className="relative">
         <input
@@ -56,9 +39,9 @@ export default function StudentRegistration() {
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           accept="image/*,.pdf"
         />
-        <div className="flex items-center justify-center gap-2 w-full px-4 py-4 border-2 border-dashed border-purple-300 rounded-lg bg-purple-50 hover:bg-purple-100 transition cursor-pointer group">
-          <Upload className="w-5 h-5 text-purple-600 group-hover:scale-110 transition" />
-          <span className="text-sm font-medium text-purple-600">
+        <div className="flex items-center justify-center gap-2 w-full px-4 py-4 border-2 border-dashed border-indigo-300 rounded-lg bg-indigo-50 hover:bg-indigo-100 transition cursor-pointer group">
+          <Upload className="w-5 h-5 text-indigo-600 group-hover:scale-110 transition" />
+          <span className="text-sm font-medium text-indigo-600">
             {fileName ? "Change File" : "Click to Upload"}
           </span>
         </div>
@@ -71,72 +54,37 @@ export default function StudentRegistration() {
     </div>
   );
 
-  // ===== Step 1 Validation: Personal Info =====
-  const validateStep1 = () => {
+  // Updated: generic email pattern instead of @pilani.bits...
+  const validateRegistration = () => {
     let temp = {};
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phonePattern = /^[0-9]{10}$/;
 
-    if (!formData.firstName.trim()) temp.firstName = "First name is required.";
-    if (!formData.lastName.trim()) temp.lastName = "Last name is required.";
+    if (!formData.adminId.trim()) temp.adminId = "Admin ID is required.";
+    if (!formData.fullName.trim()) temp.fullName = "Full name is required.";
     if (!emailPattern.test(formData.email))
       temp.email = "Please enter a valid email address.";
     if (!phonePattern.test(formData.phone))
       temp.phone = "Phone must be 10 digits.";
-    if (!formData.dateOfBirth) temp.dateOfBirth = "Date of birth is required.";
-    if (!formData.gender) temp.gender = "Gender is required.";
-    if (!formData.profilePhoto) temp.profilePhoto = "Profile photo is required.";
+    if (!formData.designation.trim())
+      temp.designation = "Designation is required.";
+    if (!formData.profilePhoto)
+      temp.profilePhoto = "Profile photo is required.";
+    if (!formData.govtId) temp.govtId = "Government ID is required.";
+    if (!formData.collegeId) temp.collegeId = "College ID proof is required.";
 
     setErrors(temp);
     return Object.keys(temp).length === 0;
   };
 
-  // ===== Step 2 Validation: Family Info =====
-  const validateStep2 = () => {
-    let temp = {};
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phonePattern = /^[0-9]{10}$/;
-
-    if (!formData.guardianName.trim()) temp.guardianName = "Guardian name is required.";
-    if (!formData.relation) temp.relation = "Relation is required.";
-    if (!emailPattern.test(formData.guardianEmail))
-      temp.guardianEmail = "Please enter a valid guardian email.";
-    if (!phonePattern.test(formData.guardianPhone))
-      temp.guardianPhone = "Guardian phone must be 10 digits.";
-    if (!formData.guardianAddress.trim())
-      temp.guardianAddress = "Guardian address is required.";
-    if (!formData.guardianIdProof) temp.guardianIdProof = "Guardian ID proof is required.";
-
-    setErrors(temp);
-    return Object.keys(temp).length === 0;
-  };
-
-  // ===== Step 3 Validation: Academic Info (FIXED) =====
-  const validateStep3 = () => {
-    let temp = {};
-
-    if (!formData.enrollmentNumber.trim())
-      temp.enrollmentNumber = "Enrollment number is required.";
-    if (!formData.branch.trim())
-      temp.branch = "Branch is required.";
-    if (!formData.semester)
-      temp.semester = "Semester is required.";
-    if (!formData.cgpa || isNaN(formData.cgpa) || parseFloat(formData.cgpa) < 0 || parseFloat(formData.cgpa) > 10)
-      temp.cgpa = "CGPA must be a number between 0 and 10.";
-
-    setErrors(temp);
-    return Object.keys(temp).length === 0;
-  };
-
-  // ===== Step 4 Validation: Password =====
-  const validateStep4 = () => {
+  const validatePassword = () => {
     let temp = {};
     const passwordPattern =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^])[A-Za-z\d@$!%*?&#^]{8,}$/;
 
     if (!passwordPattern.test(formData.password)) {
       temp.password =
-        "Password must be at least 8 characters long with uppercase, lowercase, number, and symbol.";
+        "Password must be at least 8 characters long, include uppercase, lowercase, number, and symbol.";
     }
     if (formData.password !== formData.confirmPassword) {
       temp.confirmPassword = "Passwords do not match.";
@@ -146,144 +94,114 @@ export default function StudentRegistration() {
     return Object.keys(temp).length === 0;
   };
 
-  // ===== Handle Step Navigation =====
-  const handleNextStep = (e) => {
+  const handleRegistrationNext = (e) => {
     e.preventDefault();
-    
-    if (step === 1 && validateStep1()) {
+    if (validateRegistration()) {
       setStep(2);
-      window.scrollTo(0, 0);
-    } else if (step === 2 && validateStep2()) {
-      setStep(3);
-      window.scrollTo(0, 0);
-    } else if (step === 3 && validateStep3()) {
-      setStep(4);
       window.scrollTo(0, 0);
     }
   };
 
-  const handleBackStep = () => {
-    setStep(step - 1);
-    window.scrollTo(0, 0);
-  };
-
-  // ===== Submit Registration =====
-  const handleSubmit = async (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateStep4()) return;
+    if (validatePassword()) {
+      try {
+        const formDataToSend = new FormData();
+        formDataToSend.append("adminId", formData.adminId);
+        formDataToSend.append("fullName", formData.fullName);
+        formDataToSend.append("email", formData.email);
+        formDataToSend.append("phone", formData.phone);
+        formDataToSend.append("designation", formData.designation);
+        formDataToSend.append("password", formData.password);
+        formDataToSend.append("profilePhoto", formData.profilePhoto);
+        formDataToSend.append("govtId", formData.govtId);
+        formDataToSend.append("collegeId", formData.collegeId);
 
-    try {
-      const formDataToSend = new FormData();
-      
-      // Personal Info
-      formDataToSend.append("firstName", formData.firstName);
-      formDataToSend.append("lastName", formData.lastName);
-      formDataToSend.append("email", formData.email);
-      formDataToSend.append("phone", formData.phone);
-      formDataToSend.append("dateOfBirth", formData.dateOfBirth);
-      formDataToSend.append("gender", formData.gender);
-      formDataToSend.append("profilePhoto", formData.profilePhoto);
-      
-      // Family Info
-      formDataToSend.append("guardianName", formData.guardianName);
-      formDataToSend.append("relation", formData.relation);
-      formDataToSend.append("guardianEmail", formData.guardianEmail);
-      formDataToSend.append("guardianPhone", formData.guardianPhone);
-      formDataToSend.append("guardianAddress", formData.guardianAddress);
-      formDataToSend.append("guardianIdProof", formData.guardianIdProof);
-      
-      // Academic Info
-      formDataToSend.append("enrollmentNumber", formData.enrollmentNumber);
-      formDataToSend.append("branch", formData.branch);
-      formDataToSend.append("semester", formData.semester);
-      formDataToSend.append("cgpa", formData.cgpa);
-      
-      // Password
-      formDataToSend.append("password", formData.password);
+        const response = await fetch(`${BASE_URL}/api/admin/register`, {
+          method: "POST",
+          body: formDataToSend,
+        });
 
-      const response = await fetch(`${BASE_URL}/api/student/register`, {
-        method: "POST",
-        body: formDataToSend,
-      });
+        const data = await response.json();
 
-      const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Registration failed");
 
-      if (!response.ok) throw new Error(data.error || "Registration failed");
-
-      setSuccess(true);
-      console.log("✅ Student Registered:", data);
-      setTimeout(() => navigate("/login"), 2000);
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("An error occurred while registering: " + error.message);
-      setErrors({ submit: error.message });
+        setSuccess(true);
+        console.log("✅ Admin Registered:", data);
+        setTimeout(() => navigate("/Admin"), 2000);
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        alert("An error occurred while registering.");
+      }
     }
   };
 
   return (
     <div className="min-h-screen bg-purple-50 flex justify-center items-center py-10 px-4">
       <div className="bg-white shadow-xl border rounded-xl w-full max-w-3xl p-8">
-        
         {/* ===== Step Indicators ===== */}
-        <div className="flex justify-between mb-8">
-          {["Personal Info", "Family Info", "Academic Info", "Password"].map(
-            (label, idx) => (
-              <div key={idx} className="flex-1 text-center">
-                <h4
-                  className={`font-semibold text-sm ${
-                    step === idx + 1 ? "text-purple-700" : "text-gray-500"
-                  }`}
-                >
-                  Step {idx + 1}: {label}
-                </h4>
-                {step === idx + 1 && (
-                  <div className="h-1 bg-purple-700 mt-2 rounded-full"></div>
-                )}
-              </div>
-            )
-          )}
+        <div className="flex justify-between mb-6">
+          <div className="flex-1 text-center">
+            <h4
+              className={`font-semibold ${
+                step === 1 ? "text-purple-700" : "text-gray-500"
+              }`}
+            >
+              Step 1: Registration
+            </h4>
+            {step === 1 && (
+              <div className="h-1 bg-purple-700 mt-1 rounded-full"></div>
+            )}
+          </div>
+          <div className="flex-1 text-center">
+            <h4
+              className={`font-semibold ${
+                step === 2 ? "text-purple-700" : "text-gray-500"
+              }`}
+            >
+              Step 2: Create Password
+            </h4>
+            {step === 2 && (
+              <div className="h-1 bg-purple-700 mt-1 rounded-full"></div>
+            )}
+          </div>
         </div>
 
-        {/* ===== STEP 1: Personal Info ===== */}
+        {/* ===== Step 1: Admin Registration ===== */}
         {step === 1 && (
-          <form onSubmit={handleNextStep} className="space-y-5">
-            <h3 className="text-lg font-semibold text-purple-800 mb-4">
-              Step 1: Personal Information
-            </h3>
-
+          <form onSubmit={handleRegistrationNext} className="space-y-5">
             <div className="grid sm:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name <span className="text-red-500">*</span>
+                  Admin ID
                 </label>
                 <input
                   type="text"
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                  value={formData.firstName}
+                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500"
+                  value={formData.adminId}
                   onChange={(e) =>
-                    setFormData({ ...formData, firstName: e.target.value })
+                    setFormData({ ...formData, adminId: e.target.value })
                   }
                 />
-                {errors.firstName && (
-                  <p className="text-red-600 text-sm mt-1">{errors.firstName}</p>
+                {errors.adminId && (
+                  <p className="text-red-600 text-sm">{errors.adminId}</p>
                 )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name <span className="text-red-500">*</span>
+                  Full Name
                 </label>
                 <input
                   type="text"
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                  value={formData.lastName}
+                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500"
+                  value={formData.fullName}
                   onChange={(e) =>
-                    setFormData({ ...formData, lastName: e.target.value })
+                    setFormData({ ...formData, fullName: e.target.value })
                   }
                 />
-                {errors.lastName && (
-                  <p className="text-red-600 text-sm mt-1">{errors.lastName}</p>
+                {errors.fullName && (
+                  <p className="text-red-600 text-sm">{errors.fullName}</p>
                 )}
               </div>
             </div>
@@ -291,84 +209,64 @@ export default function StudentRegistration() {
             <div className="grid sm:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email <span className="text-red-500">*</span>
+                  Email Address
                 </label>
                 <input
                   type="email"
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500"
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
                 />
                 {errors.email && (
-                  <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+                  <p className="text-red-600 text-sm">{errors.email}</p>
                 )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone <span className="text-red-500">*</span>
+                  Phone Number
                 </label>
                 <input
-                  type="tel"
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                  type="text"
+                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500"
                   value={formData.phone}
                   onChange={(e) =>
                     setFormData({ ...formData, phone: e.target.value })
                   }
                 />
                 {errors.phone && (
-                  <p className="text-red-600 text-sm mt-1">{errors.phone}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date of Birth <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                  value={formData.dateOfBirth}
-                  onChange={(e) =>
-                    setFormData({ ...formData, dateOfBirth: e.target.value })
-                  }
-                />
-                {errors.dateOfBirth && (
-                  <p className="text-red-600 text-sm mt-1">{errors.dateOfBirth}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Gender <span className="text-red-500">*</span>
-                </label>
-                <select
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                  value={formData.gender}
-                  onChange={(e) =>
-                    setFormData({ ...formData, gender: e.target.value })
-                  }
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-                {errors.gender && (
-                  <p className="text-red-600 text-sm mt-1">{errors.gender}</p>
+                  <p className="text-red-600 text-sm">{errors.phone}</p>
                 )}
               </div>
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Admin Designation
+              </label>
+              <input
+                type="text"
+                className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500"
+                value={formData.designation}
+                onChange={(e) =>
+                  setFormData({ ...formData, designation: e.target.value })
+                }
+              />
+              {errors.designation && (
+                <p className="text-red-600 text-sm">{errors.designation}</p>
+              )}
+            </div>
+
+            {/* ===== File Uploads ===== */}
+            <div className="grid sm:grid-cols-2 gap-6 mt-6">
               <FileUploadField
-                label="Profile Photo"
+                label="Upload Profile Photo"
                 name="profilePhoto"
-                fileName={formData.profilePhoto ? formData.profilePhoto.name : ""}
+                fileName={
+                  formData.profilePhoto ? formData.profilePhoto.name : ""
+                }
                 handleFileChange={(e) =>
                   setFormData({
                     ...formData,
@@ -376,284 +274,62 @@ export default function StudentRegistration() {
                   })
                 }
               />
-              {errors.profilePhoto && (
-                <p className="text-red-600 text-sm mt-2">{errors.profilePhoto}</p>
-              )}
+              <FileUploadField
+                label="Upload Government ID"
+                name="govtId"
+                fileName={formData.govtId ? formData.govtId.name : ""}
+                handleFileChange={(e) =>
+                  setFormData({ ...formData, govtId: e.target.files[0] })
+                }
+              />
             </div>
+
+            <div className="mt-5">
+              <FileUploadField
+                label="Upload College ID Proof"
+                name="collegeId"
+                fileName={formData.collegeId ? formData.collegeId.name : ""}
+                handleFileChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    collegeId: e.target.files[0],
+                  })
+                }
+              />
+            </div>
+
+            {errors.profilePhoto && (
+              <p className="text-red-600 text-sm mt-2">{errors.profilePhoto}</p>
+            )}
+            {errors.govtId && (
+              <p className="text-red-600 text-sm">{errors.govtId}</p>
+            )}
+            {errors.collegeId && (
+              <p className="text-red-600 text-sm">{errors.collegeId}</p>
+            )}
 
             <div className="text-center pt-4">
               <button
                 type="submit"
-                className="bg-purple-700 text-white px-8 py-2 rounded-md hover:bg-purple-800 transition font-medium"
+                className="bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-800 transition"
               >
-                Next: Family Info →
+                Next: Create Password →
               </button>
             </div>
           </form>
         )}
 
-        {/* ===== STEP 2: Family Info ===== */}
+        {/* ===== Step 2: Create Password ===== */}
         {step === 2 && (
-          <form onSubmit={handleNextStep} className="space-y-5">
-            <h3 className="text-lg font-semibold text-purple-800 mb-4">
-              Step 2: Family Information
+          <form onSubmit={handlePasswordSubmit} className="space-y-6">
+            <h3 className="text-xl font-semibold text-purple-800 mb-5 text-center">
+              Create Your Admin Account Password
             </h3>
 
-            <div className="grid sm:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Guardian Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                  value={formData.guardianName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, guardianName: e.target.value })
-                  }
-                />
-                {errors.guardianName && (
-                  <p className="text-red-600 text-sm mt-1">{errors.guardianName}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Relation <span className="text-red-500">*</span>
-                </label>
-                <select
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                  value={formData.relation}
-                  onChange={(e) =>
-                    setFormData({ ...formData, relation: e.target.value })
-                  }
-                >
-                  <option value="">Select Relation</option>
-                  <option value="Father">Father</option>
-                  <option value="Mother">Mother</option>
-                  <option value="Brother">Brother</option>
-                  <option value="Sister">Sister</option>
-                  <option value="Other">Other</option>
-                </select>
-                {errors.relation && (
-                  <p className="text-red-600 text-sm mt-1">{errors.relation}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Guardian Email <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                  value={formData.guardianEmail}
-                  onChange={(e) =>
-                    setFormData({ ...formData, guardianEmail: e.target.value })
-                  }
-                />
-                {errors.guardianEmail && (
-                  <p className="text-red-600 text-sm mt-1">{errors.guardianEmail}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Guardian Phone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                  value={formData.guardianPhone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, guardianPhone: e.target.value })
-                  }
-                />
-                {errors.guardianPhone && (
-                  <p className="text-red-600 text-sm mt-1">{errors.guardianPhone}</p>
-                )}
-              </div>
-            </div>
-
+            {/* Password Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Guardian Address <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                rows="3"
-                value={formData.guardianAddress}
-                onChange={(e) =>
-                  setFormData({ ...formData, guardianAddress: e.target.value })
-                }
-              />
-              {errors.guardianAddress && (
-                <p className="text-red-600 text-sm mt-1">{errors.guardianAddress}</p>
-              )}
-            </div>
-
-            <div>
-              <FileUploadField
-                label="Guardian ID Proof"
-                name="guardianIdProof"
-                fileName={formData.guardianIdProof ? formData.guardianIdProof.name : ""}
-                handleFileChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    guardianIdProof: e.target.files[0],
-                  })
-                }
-              />
-              {errors.guardianIdProof && (
-                <p className="text-red-600 text-sm mt-2">{errors.guardianIdProof}</p>
-              )}
-            </div>
-
-            <div className="flex gap-4 pt-4">
-              <button
-                type="button"
-                onClick={handleBackStep}
-                className="flex-1 border border-purple-700 text-purple-700 px-6 py-2 rounded-md hover:bg-purple-50 transition font-medium"
-              >
-                ← Back
-              </button>
-              <button
-                type="submit"
-                className="flex-1 bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-800 transition font-medium"
-              >
-                Next: Academic Info →
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* ===== STEP 3: Academic Info ===== */}
-        {step === 3 && (
-          <form onSubmit={handleNextStep} className="space-y-5">
-            <h3 className="text-lg font-semibold text-purple-800 mb-4">
-              Step 3: Academic Information
-            </h3>
-
-            <div className="grid sm:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Enrollment Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                  value={formData.enrollmentNumber}
-                  onChange={(e) =>
-                    setFormData({ ...formData, enrollmentNumber: e.target.value })
-                  }
-                />
-                {errors.enrollmentNumber && (
-                  <p className="text-red-600 text-sm mt-1">{errors.enrollmentNumber}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Branch <span className="text-red-500">*</span>
-                </label>
-                <select
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                  value={formData.branch}
-                  onChange={(e) =>
-                    setFormData({ ...formData, branch: e.target.value })
-                  }
-                >
-                  <option value="">Select Branch</option>
-                  <option value="CSE">Computer Science & Engineering</option>
-                  <option value="ECE">Electronics & Communication</option>
-                  <option value="MECH">Mechanical Engineering</option>
-                  <option value="CIVIL">Civil Engineering</option>
-                  <option value="EEE">Electrical & Electronics</option>
-                </select>
-                {errors.branch && (
-                  <p className="text-red-600 text-sm mt-1">{errors.branch}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Semester <span className="text-red-500">*</span>
-                </label>
-                <select
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                  value={formData.semester}
-                  onChange={(e) =>
-                    setFormData({ ...formData, semester: e.target.value })
-                  }
-                >
-                  <option value="">Select Semester</option>
-                  <option value="1">Semester 1</option>
-                  <option value="2">Semester 2</option>
-                  <option value="3">Semester 3</option>
-                  <option value="4">Semester 4</option>
-                  <option value="5">Semester 5</option>
-                  <option value="6">Semester 6</option>
-                  <option value="7">Semester 7</option>
-                  <option value="8">Semester 8</option>
-                </select>
-                {errors.semester && (
-                  <p className="text-red-600 text-sm mt-1">{errors.semester}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CGPA <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="10"
-                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
-                  value={formData.cgpa}
-                  onChange={(e) =>
-                    setFormData({ ...formData, cgpa: e.target.value })
-                  }
-                />
-                {errors.cgpa && (
-                  <p className="text-red-600 text-sm mt-1">{errors.cgpa}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-4 pt-4">
-              <button
-                type="button"
-                onClick={handleBackStep}
-                className="flex-1 border border-purple-700 text-purple-700 px-6 py-2 rounded-md hover:bg-purple-50 transition font-medium"
-              >
-                ← Back
-              </button>
-              <button
-                type="submit"
-                className="flex-1 bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-800 transition font-medium"
-              >
-                Next: Set Password →
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* ===== STEP 4: Password ===== */}
-        {step === 4 && (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <h3 className="text-lg font-semibold text-purple-800 mb-4 text-center">
-              Step 4: Create Your Account Password
-            </h3>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password <span className="text-red-500">*</span>
+                Password
               </label>
               <div className="relative">
                 <input
@@ -662,7 +338,7 @@ export default function StudentRegistration() {
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  className="w-full border rounded-md px-3 py-2 pr-10 focus:ring-2 focus:ring-purple-600 outline-none"
+                  className="w-full border rounded-md px-3 py-2 pr-10 focus:ring-2 focus:ring-purple-600"
                   required
                 />
                 <button
@@ -673,17 +349,15 @@ export default function StudentRegistration() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              <p className="text-xs text-gray-600 mt-2">
-                Min 8 chars, uppercase, lowercase, number, and symbol (@$!%*?&#^)
-              </p>
               {errors.password && (
-                <p className="text-red-600 text-sm mt-1">{errors.password}</p>
+                <p className="text-red-600 text-sm">{errors.password}</p>
               )}
             </div>
 
+            {/* Confirm Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm Password <span className="text-red-500">*</span>
+                Confirm Password
               </label>
               <input
                 type="password"
@@ -694,31 +368,18 @@ export default function StudentRegistration() {
                     confirmPassword: e.target.value,
                   })
                 }
-                className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-600 outline-none"
+                className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-600"
                 required
               />
               {errors.confirmPassword && (
-                <p className="text-red-600 text-sm mt-1">{errors.confirmPassword}</p>
+                <p className="text-red-600 text-sm">{errors.confirmPassword}</p>
               )}
             </div>
 
-            {errors.submit && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                <p className="text-red-700 text-sm">{errors.submit}</p>
-              </div>
-            )}
-
-            <div className="flex gap-4 pt-4">
-              <button
-                type="button"
-                onClick={handleBackStep}
-                className="flex-1 border border-purple-700 text-purple-700 px-6 py-2 rounded-md hover:bg-purple-50 transition font-medium"
-              >
-                ← Back
-              </button>
+            <div className="text-center pt-4">
               <button
                 type="submit"
-                className="flex-1 bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-800 transition font-medium"
+                className="bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-800 transition"
               >
                 Complete Registration ✅
               </button>
