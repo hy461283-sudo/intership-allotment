@@ -111,15 +111,17 @@ export default function StudentRegistration() {
     return Object.keys(temp).length === 0;
   };
 
-  // ===== Step 3 Validation: Academic Info =====
+  // ===== Step 3 Validation: Academic Info (FIXED) =====
   const validateStep3 = () => {
     let temp = {};
 
     if (!formData.enrollmentNumber.trim())
       temp.enrollmentNumber = "Enrollment number is required.";
-    if (!formData.branch) temp.branch = "Branch is required.";
-    if (!formData.semester) temp.semester = "Semester is required.";
-    if (!formData.cgpa || isNaN(formData.cgpa) || formData.cgpa < 0 || formData.cgpa > 10)
+    if (!formData.branch.trim())
+      temp.branch = "Branch is required.";
+    if (!formData.semester)
+      temp.semester = "Semester is required.";
+    if (!formData.cgpa || isNaN(formData.cgpa) || parseFloat(formData.cgpa) < 0 || parseFloat(formData.cgpa) > 10)
       temp.cgpa = "CGPA must be a number between 0 and 10.";
 
     setErrors(temp);
@@ -589,11 +591,14 @@ export default function StudentRegistration() {
                   }
                 >
                   <option value="">Select Semester</option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                    <option key={sem} value={sem}>
-                      Semester {sem}
-                    </option>
-                  ))}
+                  <option value="1">Semester 1</option>
+                  <option value="2">Semester 2</option>
+                  <option value="3">Semester 3</option>
+                  <option value="4">Semester 4</option>
+                  <option value="5">Semester 5</option>
+                  <option value="6">Semester 6</option>
+                  <option value="7">Semester 7</option>
+                  <option value="8">Semester 8</option>
                 </select>
                 {errors.semester && (
                   <p className="text-red-600 text-sm mt-1">{errors.semester}</p>
