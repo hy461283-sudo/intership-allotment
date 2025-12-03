@@ -27,8 +27,6 @@ export default function StudentRegistration() {
     govProof: null,
 
     // Family Info
-    fatherName: "",
-    motherName: "",
     guardianName: "",
     guardianRelation: "",
     guardianEmail: "",
