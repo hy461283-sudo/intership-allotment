@@ -1,7 +1,7 @@
 "use client";
 import { Home, PlusCircle, FileText, BarChart2, Settings, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useOrg } from "../../Context/OrgContext";
+import { useOrg } from "../Context/OrgContext";
 
 const menuItems = [
   { id: "overview", icon: Home, label: "Dashboard Overview" },
