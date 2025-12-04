@@ -6,7 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 
 import {
   Chart as ChartJS,
-  CategoryScale,
+  CategoryScale,   //test
   LinearScale,
   PointElement,
   LineElement,
