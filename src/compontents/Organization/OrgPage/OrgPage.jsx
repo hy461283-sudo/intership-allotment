@@ -33,7 +33,7 @@ import { useOrg } from "../../../Context/OrgContext";
 import { OrgProvider } from "../../../Context/OrgContext";
 import OrgNavbar from "../../../Common/OrgNavbar";
 import OrgSidebar from "../../../Common/OrgSidebar";
-import { BASE_URL } from "../../../config/apiEndpoints";
+import { BASE_URL, getAuthHeaders, ENDPOINTS } from "../../../config/apiEndpoints";
 
 function OrganizationDashboardContent() {
   const { activeTab, setActiveTab, theme, org } = useOrg();
@@ -42,6 +42,14 @@ function OrganizationDashboardContent() {
   const [editingId, setEditingId] = useState(null);
   const [scheduleDate, setScheduleDate] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filteredProjects, setFilteredProjects] = useState([]);
+  
+  // Password change form state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   const fetchUrl = `${BASE_URL}/api/organization`;
 
@@ -66,9 +74,27 @@ function OrganizationDashboardContent() {
     fetchProjects();
   }, []);
 
-  const safeFetch = async (url) => {
+  // Real-time search filtering with useEffect
+  useEffect(() => {
+    const filtered = projects.filter(
+      (p) =>
+        p.project_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.project_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredProjects(filtered);
+  }, [searchQuery, projects]);
+
+  const safeFetch = async (url, options = {}) => {
     try {
-      const res = await fetch(url);
+      const headers = {
+        ...getAuthHeaders(),
+        ...options.headers,
+      };
+      
+      const res = await fetch(url, {
+        ...options,
+        headers,
+      });
       return res.ok ? res.json() : [];
     } catch (err) {
       console.error("Fetch error:", err);
@@ -77,9 +103,10 @@ function OrganizationDashboardContent() {
   };
 
   const fetchProjects = async () => {
-    const data = await safeFetch(`${fetchUrl}/projects/${org.orgId}`);
-    setProjects(Array.isArray(data) ? data : []);
-    const draftsList = (Array.isArray(data) ? data : []).filter(
+    const data = await safeFetch(ENDPOINTS.organization.getProjects(org.orgId));
+    const projectsList = Array.isArray(data) ? data : [];
+    setProjects(projectsList);
+    const draftsList = projectsList.filter(
       (d) => d.status === "draft" || d.status === "scheduled"
     );
     setDrafts(draftsList);
@@ -117,8 +144,13 @@ function OrganizationDashboardContent() {
     }
 
     try {
-      const res = await fetch(`${fetchUrl}/projects`, {
+      const headers = getAuthHeaders();
+      // Don't set Content-Type for FormData, browser will set it with boundary
+      delete headers["Content-Type"];
+      
+      const res = await fetch(ENDPOINTS.organization.createProject, {
         method: "POST",
+        headers,
         body: data,
       });
       const result = await res.json();
@@ -149,6 +181,12 @@ function OrganizationDashboardContent() {
       stipend: p.stipend || "",
       guidelines: null,
     });
+    // Initialize scheduleDate if project is scheduled
+    if (p.status === "scheduled" && p.scheduled_time) {
+      setScheduleDate(new Date(p.scheduled_time));
+    } else {
+      setScheduleDate(null);
+    }
     setActiveTab("addProject");
     window.scrollTo(0, 0);
   };
@@ -168,9 +206,9 @@ function OrganizationDashboardContent() {
     };
 
     try {
-      const res = await fetch(`${fetchUrl}/projects/${editingId}`, {
+      const res = await fetch(ENDPOINTS.organization.updateProject(editingId), {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(true),
         body: JSON.stringify(body),
       });
       const result = await res.json();
@@ -192,8 +230,9 @@ function OrganizationDashboardContent() {
       return;
 
     try {
-      const res = await fetch(`${fetchUrl}/projects/${id}`, {
+      const res = await fetch(ENDPOINTS.organization.deleteProject(id), {
         method: "DELETE",
+        headers: getAuthHeaders(),
       });
       const result = await res.json();
       alert(result.message || "Project deleted successfully!");
@@ -210,9 +249,9 @@ function OrganizationDashboardContent() {
     }
 
     try {
-      const res = await fetch(`${fetchUrl}/projects/${projectId}`, {
+      const res = await fetch(ENDPOINTS.organization.updateProject(projectId), {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(true),
         body: JSON.stringify({
           status: "scheduled",
           scheduled_time: scheduleDate.toISOString(),
@@ -247,20 +286,126 @@ function OrganizationDashboardContent() {
     setScheduleDate(null);
   };
 
-  // Filter projects based on search
-  const filteredProjects = projects.filter(
-    (p) =>
-      p.project_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.project_name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Password change handler
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      alert("Please fill all password fields");
+      return;
+    }
 
-  // Calculate statistics
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert("New password and confirm password do not match");
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      alert("New password must be at least 6 characters long");
+      return;
+    }
+
+    try {
+      const res = await fetch(ENDPOINTS.organization.updateProfile, {
+        method: "PUT",
+        headers: getAuthHeaders(true),
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      const result = await res.json();
+      
+      if (res.ok) {
+        alert(result.message || "Password changed successfully!");
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      } else {
+        alert(result.error || result.message || "Failed to change password");
+      }
+    } catch (err) {
+      alert("Error changing password: " + err.message);
+    }
+  };
+
+  const handlePasswordInputChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Calculate statistics - Fixed: properly filter active projects
   const stats = {
     totalProjects: projects.length,
     active: projects.filter((p) => p.status === "active").length,
     drafts: projects.filter((p) => p.status === "draft").length,
     applications: projects.reduce((acc, p) => acc + (p.applications || 0), 0),
   };
+
+  // Generate analytics data from real projects
+  const generateAnalyticsData = () => {
+    // Applications over time - group by month
+    const applicationsByMonth = {};
+    projects.forEach((p) => {
+      if (p.created_at) {
+        const month = new Date(p.created_at).toLocaleDateString("en-US", { month: "short" });
+        applicationsByMonth[month] = (applicationsByMonth[month] || 0) + (p.applications || 0);
+      }
+    });
+    const monthLabels = Object.keys(applicationsByMonth);
+    const monthData = Object.values(applicationsByMonth);
+
+    // Applications per week - calculate from last 4 weeks
+    const now = new Date();
+    const weekData = [0, 0, 0, 0];
+    const weekLabels = ["W1", "W2", "W3", "W4"];
+    
+    projects.forEach((p) => {
+      if (p.created_at) {
+        const projectDate = new Date(p.created_at);
+        const weeksAgo = Math.floor((now - projectDate) / (7 * 24 * 60 * 60 * 1000));
+        if (weeksAgo >= 0 && weeksAgo < 4) {
+          weekData[3 - weeksAgo] += (p.applications || 0);
+        }
+      }
+    });
+
+    // Applicants by discipline
+    const disciplineCounts = {};
+    projects.forEach((p) => {
+      if (p.discipline) {
+        const disciplines = p.discipline.split(",").map((d) => d.trim());
+        disciplines.forEach((d) => {
+          disciplineCounts[d] = (disciplineCounts[d] || 0) + (p.applications || 0);
+        });
+      }
+    });
+    const disciplineLabels = Object.keys(disciplineCounts);
+    const disciplineData = Object.values(disciplineCounts);
+
+    return {
+      applicationsOverTime: {
+        labels: monthLabels.length > 0 ? monthLabels : ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+        data: monthData.length > 0 ? monthData : [0, 0, 0, 0, 0, 0],
+      },
+      applicationsPerWeek: {
+        labels: weekLabels,
+        data: weekData,
+      },
+      applicantsByDiscipline: {
+        labels: disciplineLabels.length > 0 ? disciplineLabels : ["CSE", "ECE", "ME"],
+        data: disciplineData.length > 0 ? disciplineData : [0, 0, 0],
+      },
+    };
+  };
+
+  const analyticsData = generateAnalyticsData();
 
   // ==================== RENDER UI ====================
 
@@ -334,7 +479,7 @@ function OrganizationDashboardContent() {
                 ))}
               </div>
 
-              {/* Applications Chart */}
+              {/* Applications Chart - Using Real Data */}
               <div
                 className={`p-6 rounded-lg shadow ${
                   theme === "dark" ? "bg-gray-800" : "bg-white"
@@ -346,20 +491,13 @@ function OrganizationDashboardContent() {
                 <Line
                   key="overviewChart"
                   data={{
-                    labels: [
-                      "Jan",
-                      "Feb",
-                      "Mar",
-                      "Apr",
-                      "May",
-                      "Jun",
-                    ],
+                    labels: analyticsData.applicationsOverTime.labels,
                     datasets: [
                       {
                         label: "Applications",
                         borderColor: "#7c3aed",
                         backgroundColor: "rgba(124, 58, 237, 0.1)",
-                        data: [10, 40, 55, 80, 65, 90],
+                        data: analyticsData.applicationsOverTime.data,
                         tension: 0.4,
                         fill: true,
                       },
@@ -484,9 +622,15 @@ function OrganizationDashboardContent() {
                             </span>
                           </td>
                           <td className="px-6 py-3 text-xs text-gray-500">
-                            {new Date(
-                              p.created_at
-                            ).toLocaleDateString()}
+                            {p.status === "scheduled" && p.scheduled_time
+                              ? new Date(p.scheduled_time).toLocaleString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : new Date(p.created_at).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-3 space-x-2">
                             <button
@@ -984,6 +1128,24 @@ function OrganizationDashboardContent() {
                           >
                             Code: <span className="font-mono">{d.project_code}</span>
                           </p>
+                          {/* Display scheduled date/time for scheduled projects */}
+                          {d.status === "scheduled" && d.scheduled_time && (
+                            <p
+                              className={`text-xs mt-2 font-medium ${
+                                theme === "dark"
+                                  ? "text-blue-400"
+                                  : "text-blue-600"
+                              }`}
+                            >
+                              📅 Scheduled: {new Date(d.scheduled_time).toLocaleString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          )}
                         </div>
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -1052,7 +1214,7 @@ function OrganizationDashboardContent() {
           {/* Analytics */}
           {activeTab === "analytics" && (
             <section className="p-8 grid grid-cols-2 gap-6">
-              {/* Line Chart */}
+              {/* Line Chart - Using Real Data */}
               <div
                 className={`p-6 rounded-lg shadow ${
                   theme === "dark" ? "bg-gray-800" : "bg-white"
@@ -1064,14 +1226,14 @@ function OrganizationDashboardContent() {
                 <Line
                   key="analyticLine"
                   data={{
-                    labels: ["W1", "W2", "W3", "W4"],
+                    labels: analyticsData.applicationsPerWeek.labels,
                     datasets: [
                       {
                         label: "Applications",
                         borderColor: "#7c3aed",
                         backgroundColor:
                           "rgba(124, 58, 237, 0.1)",
-                        data: [5, 20, 35, 50],
+                        data: analyticsData.applicationsPerWeek.data,
                         tension: 0.4,
                         fill: true,
                       },
@@ -1084,7 +1246,7 @@ function OrganizationDashboardContent() {
                 />
               </div>
 
-              {/* Pie Chart */}
+              {/* Pie Chart - Using Real Data */}
               <div
                 className={`p-6 rounded-lg shadow ${
                   theme === "dark" ? "bg-gray-800" : "bg-white"
@@ -1096,19 +1258,23 @@ function OrganizationDashboardContent() {
                 <Pie
                   key="analyticPie"
                   data={{
-                    labels: ["CSE", "ECE", "ME"],
+                    labels: analyticsData.applicantsByDiscipline.labels,
                     datasets: [
                       {
-                        data: [45, 30, 25],
+                        data: analyticsData.applicantsByDiscipline.data,
                         backgroundColor: [
                           "#7c3aed",
                           "#a78bfa",
                           "#c4b5fd",
+                          "#ddd6fe",
+                          "#ede9fe",
                         ],
                         borderColor: [
                           "#6d28d9",
                           "#9333ea",
                           "#a855f7",
+                          "#c084fc",
+                          "#d8b4fe",
                         ],
                         borderWidth: 2,
                       },
@@ -1189,62 +1355,89 @@ function OrganizationDashboardContent() {
                 </div>
 
                 {/* Change Password */}
-                <div>
-                  <label
-                    className={`block text-sm font-semibold mb-3 ${
-                      theme === "dark"
-                        ? "text-gray-300"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    Change Password
-                  </label>
-                  <div className="space-y-2">
-                    <input
-                      type="password"
-                      placeholder="Current Password"
-                      className={`border p-3 rounded-lg w-full ${
+                <form onSubmit={handlePasswordChange}>
+                  <div>
+                    <label
+                      className={`block text-sm font-semibold mb-3 ${
                         theme === "dark"
-                          ? "bg-gray-700 border-gray-600"
-                          : "bg-white border-gray-300"
+                          ? "text-gray-300"
+                          : "text-gray-700"
                       }`}
-                    />
-                    <input
-                      type="password"
-                      placeholder="New Password"
-                      className={`border p-3 rounded-lg w-full ${
-                        theme === "dark"
-                          ? "bg-gray-700 border-gray-600"
-                          : "bg-white border-gray-300"
-                      }`}
-                    />
-                    <input
-                      type="password"
-                      placeholder="Confirm Password"
-                      className={`border p-3 rounded-lg w-full ${
-                        theme === "dark"
-                          ? "bg-gray-700 border-gray-600"
-                          : "bg-white border-gray-300"
-                      }`}
-                    />
+                    >
+                      Change Password
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="password"
+                        name="currentPassword"
+                        placeholder="Current Password"
+                        value={passwordData.currentPassword}
+                        onChange={handlePasswordInputChange}
+                        className={`border p-3 rounded-lg w-full ${
+                          theme === "dark"
+                            ? "bg-gray-700 border-gray-600"
+                            : "bg-white border-gray-300"
+                        }`}
+                        required
+                      />
+                      <input
+                        type="password"
+                        name="newPassword"
+                        placeholder="New Password"
+                        value={passwordData.newPassword}
+                        onChange={handlePasswordInputChange}
+                        className={`border p-3 rounded-lg w-full ${
+                          theme === "dark"
+                            ? "bg-gray-700 border-gray-600"
+                            : "bg-white border-gray-300"
+                        }`}
+                        required
+                        minLength={6}
+                      />
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        placeholder="Confirm Password"
+                        value={passwordData.confirmPassword}
+                        onChange={handlePasswordInputChange}
+                        className={`border p-3 rounded-lg w-full ${
+                          theme === "dark"
+                            ? "bg-gray-700 border-gray-600"
+                            : "bg-white border-gray-300"
+                        }`}
+                        required
+                        minLength={6}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {/* Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <button className="px-6 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-colors font-medium">
-                    Save Changes
-                  </button>
-                  <button
-                    className={`px-6 py-2 border rounded-lg font-medium transition-colors ${
-                      theme === "dark"
-                        ? "border-gray-600 hover:bg-gray-700"
-                        : "border-gray-300 hover:bg-gray-100"
-                    }`}
-                  >
-                    Cancel
-                  </button>
-                </div>
+                  {/* Buttons */}
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="submit"
+                      className="px-6 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-colors font-medium"
+                    >
+                      Save Changes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPasswordData({
+                          currentPassword: "",
+                          newPassword: "",
+                          confirmPassword: "",
+                        });
+                      }}
+                      className={`px-6 py-2 border rounded-lg font-medium transition-colors ${
+                        theme === "dark"
+                          ? "border-gray-600 hover:bg-gray-700"
+                          : "border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
               </div>
             </section>
           )}
