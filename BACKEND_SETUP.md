@@ -22,7 +22,9 @@ VITE_API_BASE_URL=http://localhost:5050
 Set the environment variable in Vercel dashboard:
 1. Go to your Vercel project settings
 2. Navigate to **Environment Variables**
-3. Add: `VITE_API_BASE_URL` = `https://your-backend-domain.com`
+3. Add: `VITE_API_BASE_URL` = `https://athletic-imagination-production.up.railway.app`
+4. Make sure to select **Production** environment
+5. Redeploy your application after adding the variable
 
 ### Backend (sia-backend repo)
 
