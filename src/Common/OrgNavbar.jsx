@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Bell, LogOut, Sun, Moon, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useOrg } from "../../Context/OrgContext";
+import { useOrg } from "../Context/OrgContext";
 
 export default function OrgNavbar() {
   const navigate = useNavigate();
