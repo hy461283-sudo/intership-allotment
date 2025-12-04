@@ -31,8 +31,8 @@ ChartJS.register(
 
 import { useOrg } from "../../../Context/OrgContext";
 import { OrgProvider } from "../../../Context/OrgContext";
-import OrgNavbar from "../../Common/OrgNavbar";
-import OrgSidebar from "../../Common/OrgSidebar";
+import OrgNavbar from "../../../Common/OrgNavbar";
+import OrgSidebar from "../../../Common/OrgSidebar";
 import { BASE_URL } from "../../../config/apiEndpoints";
 
 function OrganizationDashboardContent() {
